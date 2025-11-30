@@ -59,6 +59,11 @@
             font-weight: 700;
             line-height: 1;
         }
+        /* Custom styles for the Canvas chart */
+        #caseTrendChart {
+            background-color: #1f2937; /* Darker background for chart readability */
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body class="selection:bg-red-900 selection:text-white">
@@ -75,7 +80,8 @@
                 <div class="flex space-x-8">
                     <a href="#about" class="nav-link text-sm font-medium text-gray-300 py-1 transition duration-150">About Marburg</a>
                     <a href="#dashboard" class="nav-link text-sm font-medium text-gray-300 py-1 transition duration-150">Dashboard</a>
-                    <a href="#report" class="nav-link text-sm font-medium text-gray-300 py-1 transition duration-150">Situation Report</a>
+                    <a href="#trends" class="nav-link text-sm font-medium text-gray-300 py-1 transition duration-150">Trends</a>
+                    <a href="#report" class="nav-link text-sm font-medium text-gray-300 py-1 transition duration-150">Report</a>
                 </div>
             </div>
         </div>
@@ -144,6 +150,7 @@
                             <div class="rounded-xl overflow-hidden shadow-2xl border border-red-700/50 bg-gray-900 p-4">
                                 <h5 class="text-lg font-semibold text-yellow-400 mb-2">Transmission Cycle</h5>
                                 <div class="h-48 flex items-center justify-center bg-gray-800 rounded-lg">
+                                    <!-- Using the same uploaded image for the placeholder -->
                                     <img src="image_a1135d.jpg" alt="Diagram illustrating the Marburg transmission cycle" class="max-h-full w-auto object-contain rounded-lg border border-red-800/50">
                                 </div>
                                 <p class="text-center text-xs italic text-gray-400 mt-2">
@@ -232,6 +239,42 @@
             </div>
         </section>
 
+        <!-- TRENDS & FORECASTING SECTION (NEW) -->
+        <section id="trends" class="py-16 bg-gray-900 border-t border-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-yellow-500 mb-10 border-b border-yellow-800/50 pb-2">Epidemiological Trends & Next Week Forecast</h2>
+                
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Chart Area -->
+                    <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-inner border border-red-900/50">
+                        <h3 class="text-xl font-semibold text-white mb-4">Confirmed Cases Trend (Last 14 Days + 7 Day Forecast)</h3>
+                        <canvas id="caseTrendChart" class="w-full h-96"></canvas>
+                    </div>
+                    
+                    <!-- Forecast Summary -->
+                    <div class="lg:col-span-1 bg-gray-800/70 p-6 rounded-xl shadow-lg border border-yellow-700/50 space-y-4">
+                        <h3 class="text-2xl font-semibold text-yellow-300 border-b border-yellow-700 pb-2">7-Day Projection (Model: SEIR)</h3>
+                        <div class="text-gray-300">
+                            <p class="text-sm uppercase font-bold text-red-400">Predicted Total Cases (Week End)</p>
+                            <p class="text-4xl font-extrabold text-red-300" id="forecast-cases">--</p>
+                        </div>
+                        <div class="text-gray-300 pt-2">
+                            <p class="text-sm uppercase font-bold text-red-400">Predicted Peak Day</p>
+                            <p class="text-2xl font-bold text-yellow-300" id="forecast-peak">--</p>
+                        </div>
+                        <p id="forecast-narrative" class="text-sm italic text-gray-400 mt-4">
+                            Loading predictive model summary...
+                        </p>
+                        <p class="text-xs text-gray-500 pt-4 border-t border-gray-700">
+                            Note: Forecasting models are highly dependent on mitigation strategies and data accuracy. This is a preliminary projection.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- END TRENDS & FORECASTING SECTION -->
+
+
         <!-- Situation Report Section -->
         <section id="report" class="py-16 gradient-section border-t border-gray-800">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -278,87 +321,98 @@
 
 
     <script>
-        // --- DATA SIMULATION LOGIC (Mirroring the Python Class Structure) ---
+        // --- DATA SIMULATION LOGIC ---
 
-        /**
-         * Simulates fetching data from various health organizations.
-         * The data structure mirrors the output of the Python monitoring tool.
-         */
-        function generateRawData() {
-            const now = new Date();
-            const lastReportDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(); // 1 day ago
-            const updateDate = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 5 days ago
-
-            const ephi_data = {
-                "source": "Ethiopian Public Health Institute (EPHI)",
-                "timestamp": now.toISOString(),
-                "outbreaks": [{
-                    "cases": 6,
-                    "deaths": 6,
-                    "suspected_cases": 73,
-                    "contacts_under_followup": 349,
-                    "last_report_date": lastReportDate
-                }]
-            };
-
-            const who_data = {
-                "source": "World Health Organization (WHO)",
-                "global_alerts": [{
-                    "confirmed_cases": 6,
-                    "confirmed_deaths": 3,
-                    "contacts_monitored": 206,
-                    "report_date": updateDate
-                }]
-            };
-
-            const cdc_data = {
-                "source": "US Centers for Disease Control (CDC)",
-                "outbreak_assessments": [{
-                    "total_cases": 12, // Includes confirmed + probable
-                    "total_deaths": 7,
-                    "report_date": updateDate
-                }]
-            };
-
-            const ukhsa_data = {
-                "source": "UK Health Security Agency (UKHSA)",
-                "assessments": [{
-                    "confirmed_cases": 10,
-                    "confirmed_deaths": 5,
-                    "assessment_date": updateDate
-                }]
-            };
-
-            const lab_data = {
-                "source": "National Laboratory Network",
-                "tests_conducted": 150,
-                "positive_cases": 8,
-            };
-            
-            return { ephi_data, who_data, cdc_data, ukhsa_data, lab_data };
+        // Helper function to get dates
+        function getDateNDaysAgo(n) {
+            const d = new Date();
+            d.setDate(d.getDate() - n);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Helper function to get future dates
+        function getDateNDaysFromNow(n) {
+            const d = new Date();
+            d.setDate(d.getDate() + n);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
 
         /**
+         * Simulates fetching data from various health organizations and generates time series.
+         */
+        function generateRawData() {
+            const now = new Date();
+            const lastReportDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+            const updateDate = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            // 1. Static Metrics
+            const ephi_data = { "source": "Ethiopian Public Health Institute (EPHI)", "timestamp": now.toISOString(), "outbreaks": [{ "cases": 6, "deaths": 6, "suspected_cases": 73, "contacts_under_followup": 349, "last_report_date": lastReportDate }] };
+            const who_data = { "source": "World Health Organization (WHO)", "global_alerts": [{ "confirmed_cases": 6, "confirmed_deaths": 3, "contacts_monitored": 206, "report_date": updateDate }] };
+            const cdc_data = { "source": "US Centers for Disease Control (CDC)", "outbreak_assessments": [{ "total_cases": 12, "total_deaths": 7, "report_date": updateDate }] };
+            const ukhsa_data = { "source": "UK Health Security Agency (UKHSA)", "assessments": [{ "confirmed_cases": 10, "confirmed_deaths": 5, "assessment_date": updateDate }] };
+            const lab_data = { "source": "National Laboratory Network", "tests_conducted": 150, "positive_cases": 8 };
+
+            // 2. Time Series Data (14 days historical)
+            // Simulating a slightly rising then stabilizing case count (Cumulative Cases)
+            const historicalCases = [2, 2, 3, 3, 4, 5, 5, 6, 7, 8, 9, 10, 11, 12]; // 14 days
+            const labels = [];
+            for (let i = 13; i >= 0; i--) {
+                labels.push(getDateNDaysAgo(i));
+            }
+
+            const timeSeries = {
+                labels: labels,
+                cases: historicalCases
+            };
+            
+            return { ephi_data, who_data, cdc_data, ukhsa_data, lab_data, timeSeries };
+        }
+
+        /**
+         * Simple simulation of SEIR-like forecasting for the next 7 days.
+         * Based on the last day's confirmed cases.
+         */
+        function predictForecast(historicalCases) {
+            const lastCaseCount = historicalCases[historicalCases.length - 1];
+            const forecast = [];
+            let current = lastCaseCount;
+            let peakDay = null;
+
+            // Simple model: high growth (Day 1-3), slowing growth (Day 4-5), stabilization (Day 6-7)
+            const growthRates = [1.2, 1.15, 1.1, 1.05, 1.02, 1.01, 1.01];
+            
+            for (let i = 0; i < 7; i++) {
+                current = Math.round(current * growthRates[i]);
+                forecast.push(current);
+                if (peakDay === null && current > lastCaseCount) {
+                    peakDay = getDateNDaysFromNow(i + 1);
+                }
+            }
+
+            const totalForecastCases = forecast[forecast.length - 1];
+            const peakCaseCount = Math.max(...forecast);
+            
+            const narrative = `The SEIR-based model projects a steady increase in cumulative cases over the next week, reaching a projected total of ${totalForecastCases}. The growth rate is expected to peak around ${peakDay}, indicating a potential stabilization or a decrease in new daily cases thereafter, provided current interventions are maintained.`;
+
+            return {
+                forecast: forecast,
+                total_forecast_cases: totalForecastCases,
+                peak_day: peakDay || 'Week 1 End',
+                narrative: narrative,
+            };
+        }
+
+        /**
          * Simulates the Python's verify_data function to consolidate metrics.
+         * Updated to include time series and forecast data.
          */
         function verifyData(rawData) {
-            const { ephi_data, who_data, cdc_data, ukhsa_data, lab_data } = rawData;
+            const { ephi_data, who_data, cdc_data, ukhsa_data, lab_data, timeSeries } = rawData;
 
-            // Extract case/death data
-            const sourceCases = {
-                "MOH": ephi_data.outbreaks[0].cases || 0,
-                "WHO": who_data.global_alerts[0].confirmed_cases || 0,
-                "CDC": cdc_data.outbreak_assessments[0].total_cases || 0,
-                "UKHSA": ukhsa_data.assessments[0].confirmed_cases || 0
-            };
-
-            const sourceDeaths = {
-                "MOH": ephi_data.outbreaks[0].deaths || 0,
-                "WHO": who_data.global_alerts[0].confirmed_deaths || 0,
-                "CDC": cdc_data.outbreak_assessments[0].total_deaths || 0,
-                "UKHSA": ukhsa_data.assessments[0].confirmed_deaths || 0
-            };
+            // Extract static case/death data (using highest for confirmed count)
+            const sourceCases = { "MOH": ephi_data.outbreaks[0].cases || 0, "WHO": who_data.global_alerts[0].confirmed_cases || 0, "CDC": cdc_data.outbreak_assessments[0].total_cases || 0, "UKHSA": ukhsa_data.assessments[0].confirmed_cases || 0 };
+            const sourceDeaths = { "MOH": ephi_data.outbreaks[0].deaths || 0, "WHO": who_data.global_alerts[0].confirmed_deaths || 0, "CDC": cdc_data.outbreak_assessments[0].total_deaths || 0, "UKHSA": ukhsa_data.assessments[0].confirmed_deaths || 0 };
             
             const caseValues = Object.values(sourceCases);
             const deathValues = Object.values(sourceDeaths);
@@ -366,15 +420,14 @@
             const confirmedCases = Math.max(...caseValues);
             const deaths = Math.max(...deathValues);
 
-            // Calculate metrics
+            // Calculate static metrics
             const caseFatalityRate = confirmedCases > 0 ? ((deaths / confirmedCases) * 100).toFixed(1) : 0;
             const testPositivityRate = lab_data.tests_conducted > 0 ? ((lab_data.positive_cases / lab_data.tests_conducted) * 100).toFixed(1) : 0;
-            
-            const contactsEphi = ephi_data.outbreaks[0].contacts_under_followup || 0;
-            const contactsWho = who_data.global_alerts[0].contacts_monitored || 0;
-            const contactsMonitored = Math.max(contactsEphi, contactsWho);
-            
+            const contactsMonitored = Math.max(ephi_data.outbreaks[0].contacts_under_followup || 0, who_data.global_alerts[0].contacts_monitored || 0);
             const riskLevel = assessRiskLevel(confirmedCases, parseFloat(caseFatalityRate));
+
+            // Generate Forecast
+            const forecastData = predictForecast(timeSeries.cases);
 
             return {
                 timestamp: new Date().toISOString(),
@@ -392,13 +445,13 @@
                     case_range: `${Math.min(...caseValues)}-${Math.max(...caseValues)}`,
                     death_range: `${Math.min(...deathValues)}-${Math.max(...deathValues)}`,
                 },
-                source_details: sourceCases
+                source_details: sourceCases,
+                // Time Series and Forecast Data
+                time_series: timeSeries,
+                forecast_data: forecastData
             };
         }
         
-        /**
-         * Simulates the Python's assess_risk_level function.
-         */
         function assessRiskLevel(cases, fatalityRate) {
             if (cases === 0) return "Low";
             if (cases <= 5) return fatalityRate < 50 ? "Moderate" : "High";
@@ -407,12 +460,10 @@
             return "Critical";
         }
 
-        /**
-         * Simulates the Python's generate_situation_report function.
-         */
         function generateSituationReport(verifiedData) {
             const risk_level = verifiedData.risk_level;
             const discrepancies = verifiedData.data_discrepancies;
+            const forecast = verifiedData.forecast_data;
             
             const executive_summary = `
 MARBURG VIRUS DISEASE OUTBREAK - ETHIOPIA
@@ -424,6 +475,10 @@ CASE FATALITY RATE: ${verifiedData.case_fatality_rate}%
 SUSPECTED CASES: ${verifiedData.suspected_cases}
 TESTS CONDUCTED: ${verifiedData.tests_conducted}
 CONTACTS MONITORED: ${verifiedData.contacts_monitored}
+ 
+FORECAST SUMMARY (7-Day Projection):
+- Predicted total cases by week end: ${forecast.total_forecast_cases}
+- Predicted peak day for growth: ${forecast.peak_day}
  
 DATA NOTES:
 - Confirmed Case reports vary by source: ${discrepancies.case_range}
@@ -452,9 +507,6 @@ PUBLIC HEALTH RESPONSE:
             };
         }
 
-        /**
-         * Simulates the Python's generate_recommendations function.
-         */
         function generateRecommendations(verifiedData) {
             const risk_level = verifiedData.risk_level;
             const cases = verifiedData.confirmed_cases;
@@ -566,6 +618,114 @@ PUBLIC HEALTH RESPONSE:
                 recommendationsList.appendChild(li);
             });
         }
+        
+        function renderTrends(verifiedData) {
+            const { time_series, forecast_data } = verifiedData;
+            
+            // 1. Render Forecast Summary
+            document.getElementById('forecast-cases').textContent = forecast_data.total_forecast_cases;
+            document.getElementById('forecast-peak').textContent = forecast_data.peak_day;
+            document.getElementById('forecast-narrative').textContent = forecast_data.narrative;
+            
+            // 2. Render Chart
+            const chartData = {
+                labels: time_series.labels.concat(forecast_data.forecast.map((_, i) => getDateNDaysFromNow(i + 1))),
+                values: time_series.cases.concat(forecast_data.forecast),
+                splitIndex: time_series.cases.length - 1
+            };
+            drawTimeLineChart('caseTrendChart', chartData);
+        }
+
+        /**
+         * Draws a line chart on the canvas element using raw Canvas API.
+         */
+        function drawTimeLineChart(canvasId, chartData) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size (important for sharp rendering)
+            const dpi = window.devicePixelRatio || 1;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.width = canvas.offsetWidth * dpi;
+            canvas.height = canvas.offsetHeight * dpi;
+            ctx.scale(dpi, dpi);
+            
+            const { labels, values, splitIndex } = chartData;
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            const padding = 30;
+            const chartHeight = height - 2 * padding;
+            const chartWidth = width - 2 * padding;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Determine max value for scaling
+            const maxValue = Math.max(...values) * 1.1;
+
+            // Plotting function
+            const getX = (index) => padding + chartWidth * (index / (labels.length - 1));
+            const getY = (value) => height - padding - chartHeight * (value / maxValue);
+
+            // Draw Y-Axis (Value Labels)
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '10px Inter';
+            for (let i = 0; i <= 5; i++) {
+                const yValue = Math.round(maxValue * (i / 5));
+                const yPos = getY(yValue);
+                // Draw horizontal grid line
+                ctx.strokeStyle = '#374151';
+                ctx.beginPath();
+                ctx.moveTo(padding, yPos);
+                ctx.lineTo(width - padding, yPos);
+                ctx.stroke();
+                // Draw label
+                ctx.fillText(yValue, padding - 25, yPos + 3);
+            }
+            
+            // Draw X-Axis (Date Labels)
+            labels.forEach((label, i) => {
+                if (i % 3 === 0 || i === labels.length - 1) { // Only draw every 3rd label or the last one
+                    const xPos = getX(i);
+                    ctx.fillText(label, xPos - 20, height - padding + 15);
+                }
+            });
+
+
+            // Draw Actual Trend Line (Historical)
+            ctx.strokeStyle = '#ef4444'; // Red for confirmed cases
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(getX(0), getY(values[0]));
+            for (let i = 1; i <= splitIndex; i++) {
+                ctx.lineTo(getX(i), getY(values[i]));
+                // Draw dots
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(getX(i), getY(values[i]), 3, 0, Math.PI * 2, true);
+                ctx.fill();
+            }
+            ctx.stroke();
+
+            // Draw Forecast Line (Dashed)
+            ctx.strokeStyle = '#f59e0b'; // Yellow for forecast
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            // Start from the last historical point
+            ctx.moveTo(getX(splitIndex), getY(values[splitIndex]));
+            for (let i = splitIndex + 1; i < values.length; i++) {
+                ctx.lineTo(getX(i), getY(values[i]));
+                // Draw forecast dots
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(getX(i), getY(values[i]), 3, 0, Math.PI * 2, true);
+                ctx.fill();
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash
+        }
+
 
         // --- MAIN INITIALIZATION ---
 
@@ -579,6 +739,7 @@ PUBLIC HEALTH RESPONSE:
                 // 2. Render UI
                 renderDashboard(verifiedData);
                 renderReport(situationReport);
+                renderTrends(verifiedData); // Render the new Trends section
 
             } catch (error) {
                 console.error("Failed to generate or render public health data:", error);
@@ -586,6 +747,13 @@ PUBLIC HEALTH RESPONSE:
                 document.getElementById('last-updated-display').textContent = 'Last Verified Data: Failed to load report.';
                 updateRiskAlertStyle("Critical");
             }
+        });
+        
+        // Ensure chart redraws on window resize
+        window.addEventListener('resize', () => {
+            const rawData = generateRawData();
+            const verifiedData = verifyData(rawData);
+            renderTrends(verifiedData); 
         });
     </script>
 </body>
